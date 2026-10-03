@@ -1,0 +1,11 @@
+.env
+.env.*
+!config/.env.example
+vendor/
+coverage/
+*.log
+*.sql
+uploads/
+responses/
+.DS_Store
+Thumbs.db
