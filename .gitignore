@@ -1,6 +1,7 @@
 .env
 .env.*
 !config/.env.example
+config/config.php
 vendor/
 coverage/
 *.log
