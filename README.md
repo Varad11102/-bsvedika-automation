@@ -4,34 +4,39 @@ Safe, test-first automation for Google Form submissions and BSVedika ID-card reg
 
 ## Current status
 
-This repository contains a non-production scaffold. It does **not** connect to the live `plus_signup` table and contains no credentials or applicant data.
+The Google Form is linked to a review Sheet, and `plus_signup_test` exists with the production structure. This repository contains a test-only API and Sheet sender. Production writes remain disabled.
 
-## Planned flow
+## Flow
 
-Google Form → linked Google Sheet → admin approval → Apps Script → authenticated PHP API → test table → production only after explicit approval.
+Google Form → linked Google Sheet → admin marks `APPROVED` → Apps Script sends a signed request → Hostinger PHP API → `plus_signup_test`.
 
 ## Safety rules
 
-- Never commit database credentials, API keys, applicant records, photos, Aadhaar data, or exported form responses.
-- Collect only the last four Aadhaar digits.
-- Use a separate test database/table until production approval.
-- Use parameterized SQL and an insert-only restricted database account.
-- Back up production before enabling live writes.
+- Never commit database credentials, API keys, applicant records, photos, Aadhaar data, or exported responses.
+- Collect and store only the last four Aadhaar digits.
+- Keep `db_table` set to `plus_signup_test` during testing.
+- Use parameterized SQL and a restricted database account.
+- Back up production before any production enablement.
 - Do not log request bodies or personal information.
 
-## Repository layout
+## Hostinger test deployment
 
-- `public/index.php` — health endpoint and future authenticated submission endpoint.
-- `src/Validation.php` — server-side registration validation.
-- `config/.env.example` — names of required environment variables only.
-- `google-apps-script/Code.gs` — test-only Google Sheet approval trigger scaffold.
-- `.github/workflows/ci.yml` — PHP syntax checks.
+1. Upload `public/submit.php`, `src/Validation.php`, and the `config` directory.
+2. Copy `config/config.example.php` to `config/config.php` on Hostinger.
+3. Put credentials and a long random shared secret only in Hostinger's `config.php`.
+4. Confirm `db_table` is exactly `plus_signup_test`.
+5. Keep `config/.htaccess` in place so the configuration cannot be downloaded.
+6. Test the endpoint over HTTPS only.
 
-## Next steps
+## Google Apps Script
 
-1. Link the Google Form to a response Sheet.
-2. Add review columns: `Review Status`, `Admin Notes`, `Member ID`, and `Processed At`.
-3. Create a separate test table.
-4. Configure test credentials only in Hostinger environment settings.
-5. Test one synthetic record.
-6. Review and approve any production deployment separately.
+1. Paste `google-apps-script/Code.gs` into the linked Sheet's Apps Script project.
+2. Set Script Properties:
+   - `BSV_TEST_ENDPOINT`: HTTPS URL ending in `/submit.php`
+   - `BSV_SHARED_SECRET`: the same secret stored on Hostinger
+3. Install the `onFormSubmitForReview` spreadsheet trigger.
+4. Use **BSVedika → Send approved active row to test API** only with synthetic data.
+
+## Production lock
+
+`submit.php` refuses to start if the configured table is anything other than `plus_signup_test`. Production support must be a separate reviewed change after a backup and successful synthetic test.
